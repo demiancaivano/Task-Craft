@@ -1,0 +1,47 @@
+name: Cross-Platform Tests
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Ejecutar todos los días a las 2 AM UTC
+    - cron: '0 2 * * *'
+
+env:
+  DOTNET_VERSION: '10.0.x'
+
+jobs:
+  test-matrix:
+    name: Test on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build
+      run: dotnet build --no-restore --configuration Release
+
+    - name: Run tests
+      run: dotnet test --no-build --configuration Release --verbosity normal --logger "trx;LogFileName=test-results.trx"
+
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results-${{ matrix.os }}
+        path: '**/test-results.trx'
+        retention-days: 7

@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="TaskCraft.API/TaskCraft.API.csproj" />
+  <Project Path="TaskCraft.Application/TaskCraft.Application.csproj" />
+  <Project Path="TaskCraft.Core/TaskCraft.Core.csproj" />
+  <Project Path="TaskCraft.Infrastructure/TaskCraft.Infrastructure.csproj" />
+  <Project Path="TaskCraft.Tests/TaskCraft.Tests.csproj" />
+</Solution>

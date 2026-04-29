@@ -1,0 +1,12 @@
+// Temporary file to generate password hashes
+// Run this in a C# interactive window or LINQPad
+
+// Admin password: DemianAdmin123!
+var adminHash = BCrypt.Net.BCrypt.HashPassword("DemianAdmin123!");
+Console.WriteLine($"Admin Hash: {adminHash}");
+
+// User password: Password123!
+var userHash = BCrypt.Net.BCrypt.HashPassword("Password123!");
+Console.WriteLine($"User Hash: {userHash}");
+
+// Copy these hashes into TaskCraftDbContext.cs
