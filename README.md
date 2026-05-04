@@ -198,6 +198,14 @@ Las contribuciones son bienvenidas! Por favor:
 
 Ver la documentación completa en Swagger UI.
 
+## 📋 To-Do List - Features Opcionales
+
+Las siguientes características están planeadas para futuras versiones:
+
+- 🎨 **10. Email Service** - Servicio de notificaciones por correo electrónico
+- 🎨 **11. File Upload** - Sistema de carga y gestión de archivos adjuntos
+- 🎨 **12. SignalR for Real-time** - Comunicación en tiempo real para actualizaciones instantáneas
+
 ## 📄 Licencia
 
 Este proyecto está bajo la Licencia MIT. Ver el archivo [LICENSE](LICENSE) para más detalles.
