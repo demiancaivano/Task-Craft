@@ -11,9 +11,9 @@ public class LoginRequestDtoValidator : AbstractValidator<LoginRequestDto>
     public LoginRequestDtoValidator()
     {
         RuleFor(x => x.Username)
-            .NotEmpty().WithMessage("Username is required")
-            .MinimumLength(3).WithMessage("Username must be at least 3 characters")
-            .MaximumLength(100).WithMessage("Username cannot exceed 100 characters");
+            .NotEmpty().WithMessage("Username or email is required")
+            .MinimumLength(3).WithMessage("Username or email must be at least 3 characters")
+            .MaximumLength(255).WithMessage("Username or email cannot exceed 255 characters");
 
         RuleFor(x => x.Password)
             .NotEmpty().WithMessage("Password is required")

@@ -26,12 +26,16 @@ public class AuthService : IAuthService
 
     public async System.Threading.Tasks.Task<LoginResponseDto> LoginAsync(LoginRequestDto request)
     {
+        var loginIdentifier = request.Username.Trim();
         var users = await _unitOfWork.Users.GetAllAsync();
-        var user = users.FirstOrDefault(u => u.Username == request.Username && !u.IsDeleted);
+        var user = users.FirstOrDefault(u =>
+            !u.IsDeleted &&
+            (string.Equals(u.Username, loginIdentifier, StringComparison.OrdinalIgnoreCase) ||
+             string.Equals(u.Email, loginIdentifier, StringComparison.OrdinalIgnoreCase)));
 
         if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
         {
-            throw new UnauthorizedException("Invalid username or password");
+            throw new UnauthorizedException("Invalid username/email or password");
         }
 
         var accessToken = GenerateAccessToken(user);
@@ -153,7 +157,7 @@ public class AuthService : IAuthService
 
     private string GenerateAccessToken(User user)
     {
-        var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:SecretKey"]!));
+        var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(GetJwtValue("SecretKey")));
         var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
         var claims = new[]
@@ -167,8 +171,8 @@ public class AuthService : IAuthService
         };
 
         var token = new JwtSecurityToken(
-            issuer: _configuration["Jwt:Issuer"],
-            audience: _configuration["Jwt:Audience"],
+            issuer: GetJwtValue("Issuer"),
+            audience: GetJwtValue("Audience"),
             claims: claims,
             expires: DateTime.UtcNow.AddMinutes(GetAccessTokenExpirationMinutes()),
             signingCredentials: credentials
@@ -203,11 +207,23 @@ public class AuthService : IAuthService
 
     private int GetAccessTokenExpirationMinutes()
     {
-        return int.Parse(_configuration["Jwt:AccessTokenExpirationMinutes"] ?? "15");
+        return int.Parse(GetJwtValue("AccessTokenExpirationMinutes", "15"));
     }
 
     private int GetRefreshTokenExpirationDays()
     {
-        return int.Parse(_configuration["Jwt:RefreshTokenExpirationDays"] ?? "7");
+        return int.Parse(GetJwtValue("RefreshTokenExpirationDays", "7"));
+    }
+
+    private string GetJwtValue(string key, string? defaultValue = null)
+    {
+        var value = _configuration[$"JwtSettings:{key}"] ?? _configuration[$"Jwt:{key}"] ?? defaultValue;
+
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            throw new InvalidOperationException($"JWT setting '{key}' is not configured.");
+        }
+
+        return value;
     }
 }
