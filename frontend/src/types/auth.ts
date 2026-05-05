@@ -3,12 +3,21 @@ export interface LoginRequest {
   password: string
 }
 
+export interface RegisterRequest {
+  username: string
+  email: string
+  password: string
+  firstName?: string
+  lastName?: string
+}
+
 export interface AuthResponse {
   userId: string
   username: string
   email: string
   firstName: string
   lastName: string
+  role: number
   accessToken: string
   refreshToken: string
   accessTokenExpiration: string
@@ -30,6 +39,7 @@ export interface AuthSession {
     email: string
     firstName: string
     lastName: string
+    role: number
   }
   accessToken: string
   refreshToken: string

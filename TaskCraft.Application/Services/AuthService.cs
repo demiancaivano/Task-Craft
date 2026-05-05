@@ -7,6 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 using TaskCraft.Application.DTOs.Auth;
 using TaskCraft.Application.Interfaces;
 using TaskCraft.Core.Entities;
+using TaskCraft.Core.Enums;
 using TaskCraft.Core.Exceptions;
 using TaskCraft.Core.Interfaces;
 using SystemTask = System.Threading.Tasks.Task;
@@ -48,6 +49,7 @@ public class AuthService : IAuthService
             Email = user.Email,
             FirstName = user.FirstName,
             LastName = user.LastName,
+            Role = user.Role,
             AccessToken = accessToken,
             RefreshToken = refreshToken.Token,
             AccessTokenExpiration = DateTime.UtcNow.AddMinutes(GetAccessTokenExpirationMinutes()),
@@ -74,7 +76,8 @@ public class AuthService : IAuthService
             Email = request.Email,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
             FirstName = request.FirstName,
-            LastName = request.LastName
+            LastName = request.LastName,
+            Role = UserRole.User
         };
 
         await _unitOfWork.Users.AddAsync(user);
@@ -90,6 +93,7 @@ public class AuthService : IAuthService
             Email = user.Email,
             FirstName = user.FirstName,
             LastName = user.LastName,
+            Role = user.Role,
             AccessToken = accessToken,
             RefreshToken = refreshToken.Token,
             AccessTokenExpiration = DateTime.UtcNow.AddMinutes(GetAccessTokenExpirationMinutes()),
@@ -129,6 +133,7 @@ public class AuthService : IAuthService
             Email = user.Email,
             FirstName = user.FirstName,
             LastName = user.LastName,
+            Role = user.Role,
             AccessToken = accessToken,
             RefreshToken = newRefreshToken.Token,
             AccessTokenExpiration = DateTime.UtcNow.AddMinutes(GetAccessTokenExpirationMinutes()),
@@ -167,7 +172,8 @@ public class AuthService : IAuthService
             new Claim(JwtRegisteredClaimNames.Email, user.Email),
             new Claim(JwtRegisteredClaimNames.GivenName, user.FirstName),
             new Claim(JwtRegisteredClaimNames.FamilyName, user.LastName),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new Claim(ClaimTypes.Role, user.Role.ToString())
         };
 
         var token = new JwtSecurityToken(

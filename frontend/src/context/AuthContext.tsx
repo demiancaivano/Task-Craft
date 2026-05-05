@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { authService } from '../services/authService'
 import type { ApiErrorResponse } from '../types/api'
-import type { AuthSession, LoginRequest } from '../types/auth'
+import type { AuthSession, LoginRequest, RegisterRequest } from '../types/auth'
 import {
   AUTH_SESSION_CHANGED_EVENT,
   clearStoredSession,
@@ -9,12 +9,14 @@ import {
   mapAuthResponseToSession,
   setStoredSession,
 } from '../utils/authStorage'
+import { migrateGuestData } from '../utils/guestMigration'
 
 type AuthContextValue = {
   session: AuthSession | null
   isAuthenticated: boolean
   isLoading: boolean
   login: (credentials: LoginRequest) => Promise<void>
+  register: (data: RegisterRequest) => Promise<void>
   logout: () => Promise<void>
 }
 
@@ -51,8 +53,41 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setStoredSession(nextSession)
       setSession(nextSession)
     } catch (error) {
-      const apiError = error as { response?: { data?: ApiErrorResponse } }
-      throw new Error(apiError.response?.data?.message ?? 'Login failed')
+      const apiError = error as { response?: { data?: ApiErrorResponse & { title?: string } } }
+      const body = apiError.response?.data
+
+      if (body?.errors && Object.keys(body.errors).length > 0) {
+        const messages = Object.values(body.errors).flat().join(' ')
+        throw new Error(messages)
+      }
+
+      throw new Error(body?.message ?? body?.title ?? 'Login failed')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const register = async (data: RegisterRequest) => {
+    setIsLoading(true)
+
+    try {
+      const response = await authService.register(data)
+      const nextSession = mapAuthResponseToSession(response)
+      setStoredSession(nextSession)
+      setSession(nextSession)
+      // Migrate any guest data to the new account (fire and forget)
+      migrateGuestData().catch(() => {})
+    } catch (error) {
+      const apiError = error as { response?: { data?: ApiErrorResponse & { title?: string } } }
+      const body = apiError.response?.data
+
+      // FluentValidation returns { errors: { Field: ["msg1", "msg2"] } }
+      if (body?.errors && Object.keys(body.errors).length > 0) {
+        const messages = Object.values(body.errors).flat().join(' ')
+        throw new Error(messages)
+      }
+
+      throw new Error(body?.message ?? body?.title ?? 'Registration failed')
     } finally {
       setIsLoading(false)
     }
@@ -81,6 +116,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         isAuthenticated: Boolean(session?.accessToken),
         isLoading,
         login,
+        register,
         logout,
       }}
     >

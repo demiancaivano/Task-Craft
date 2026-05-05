@@ -1,5 +1,5 @@
 import { apiClient } from './apiClient'
-import type { AuthResponse, LoginRequest, RefreshTokenRequest, ValidateTokenResponse } from '../types/auth'
+import type { AuthResponse, LoginRequest, RegisterRequest, RefreshTokenRequest, ValidateTokenResponse } from '../types/auth'
 
 const authBasePath = '/auth'
 
@@ -9,6 +9,11 @@ export const authService = {
       username: payload.identifier,
       password: payload.password,
     })
+    return data
+  },
+
+  async register(payload: RegisterRequest) {
+    const { data } = await apiClient.post<AuthResponse>(`${authBasePath}/register`, payload)
     return data
   },
 

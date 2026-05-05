@@ -19,9 +19,12 @@ public static class UserMappingExtensions
             Id = user.Id,
             Username = user.Username,
             Email = user.Email,
+            FirstName = user.FirstName,
+            LastName = user.LastName,
             Role = user.Role,
             IsAnonymous = user.IsAnonymous,
-            CreatedAt = user.CreatedAt
+            CreatedAt = user.CreatedAt,
+            UpdatedAt = user.UpdatedAt
         };
     }
 
@@ -36,6 +39,8 @@ public static class UserMappingExtensions
             Username = dto.Username,
             Email = dto.Email,
             PasswordHash = passwordHash,
+            FirstName = dto.FirstName ?? string.Empty,
+            LastName = dto.LastName ?? string.Empty,
             Role = dto.Role,
             IsAnonymous = dto.IsAnonymous
         };
@@ -49,6 +54,9 @@ public static class UserMappingExtensions
     {
         user.Username = dto.Username;
         user.Email = dto.Email;
+        user.FirstName = dto.FirstName ?? user.FirstName;
+        user.LastName = dto.LastName ?? user.LastName;
+        user.Role = dto.Role;
 
         if (newPasswordHash != null)
         {

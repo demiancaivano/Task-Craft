@@ -26,4 +26,14 @@ public class TaskDto
     public int CommentCount { get; set; }
     public bool IsOverdue { get; set; }
     public bool HasSubTasks { get; set; }
+    public List<TaskAssigneeDto> Assignees { get; set; } = [];
+}
+
+/// <summary>
+/// Lightweight assignee info embedded in TaskDto
+/// </summary>
+public class TaskAssigneeDto
+{
+    public Guid UserId { get; set; }
+    public string Username { get; set; } = string.Empty;
 }

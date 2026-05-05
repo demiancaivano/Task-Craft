@@ -23,10 +23,23 @@ public class ProjectRepository : Repository<Project>, IProjectRepository
             .ToListAsync(cancellationToken);
     }
 
+    public override async Task<Project?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await _dbSet
+            .Include(p => p.Owner)
+            .Include(p => p.Members)
+                .ThenInclude(m => m.User)
+            .Include(p => p.Tasks)
+            .FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
+    }
+
     public async Task<IEnumerable<Project>> GetProjectsByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         return await _dbSet
-            .Where(p => p.OwnerId == userId || p.Members.Any(m => m.UserId == userId))
+            .Where(p => p.OwnerId == userId || p.Members.Any(m => m.UserId == userId && !m.IsDeleted))
+            .Include(p => p.Owner)
+            .Include(p => p.Members)
+            .Include(p => p.Tasks)
             .ToListAsync(cancellationToken);
     }
 

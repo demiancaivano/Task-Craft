@@ -15,6 +15,7 @@ export function mapAuthResponseToSession(response: AuthResponse): AuthSession {
       email: response.email,
       firstName: response.firstName,
       lastName: response.lastName,
+      role: response.role,
     },
     accessToken: response.accessToken,
     refreshToken: response.refreshToken,

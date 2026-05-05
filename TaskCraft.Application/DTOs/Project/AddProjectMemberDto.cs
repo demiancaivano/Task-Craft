@@ -9,7 +9,6 @@ namespace TaskCraft.Application.DTOs.Project;
 /// </summary>
 public class AddProjectMemberDto
 {
-    [Required(ErrorMessage = "Project ID is required")]
     public Guid ProjectId { get; set; }
 
     [Required(ErrorMessage = "User ID is required")]

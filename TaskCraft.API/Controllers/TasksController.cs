@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TaskCraft.Application.DTOs.Task;
 using TaskCraft.Application.Interfaces;
@@ -8,12 +10,9 @@ using TaskStatus = TaskCraft.Core.Enums.TaskStatus;
 
 namespace TaskCraft.API.Controllers;
 
-/// <summary>
-/// Controller for task management operations
-/// Handles task CRUD, status/priority updates, and assignments
-/// </summary>
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class TasksController : ControllerBase
 {
     private readonly ITaskService _taskService;
@@ -28,6 +27,31 @@ public class TasksController : ControllerBase
         _taskService = taskService;
         _unitOfWork = unitOfWork;
         _logger = logger;
+    }
+
+    private Guid GetCurrentUserId()
+    {
+        var sub = User.FindFirstValue(ClaimTypes.NameIdentifier)
+               ?? User.FindFirstValue("sub");
+        return Guid.Parse(sub!);
+    }
+
+    /// <summary>Minimum role required: Member (any project role).</summary>
+    private async Task<bool> HasProjectAccessAsync(Guid projectId)
+        => await _unitOfWork.ProjectMembers.IsUserMemberOfProjectAsync(GetCurrentUserId(), projectId);
+
+    /// <summary>Developer or Manager.</summary>
+    private async Task<bool> CanDeveloperActAsync(Guid projectId)
+    {
+        var role = await _unitOfWork.ProjectMembers.GetUserRoleInProjectAsync(GetCurrentUserId(), projectId);
+        return role is ProjectRole.Developer or ProjectRole.Manager;
+    }
+
+    /// <summary>Manager only.</summary>
+    private async Task<bool> IsManagerAsync(Guid projectId)
+    {
+        var role = await _unitOfWork.ProjectMembers.GetUserRoleInProjectAsync(GetCurrentUserId(), projectId);
+        return role == ProjectRole.Manager;
     }
 
     /// <summary>
@@ -226,14 +250,16 @@ public class TasksController : ControllerBase
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(TaskDto))]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<TaskDto>> CreateTask([FromBody] CreateTaskDto createTaskDto)
     {
         try
         {
             if (!ModelState.IsValid)
-            {
                 return BadRequest(ModelState);
-            }
+
+            if (!await CanDeveloperActAsync(createTaskDto.ProjectId))
+                return Forbid();
 
             var createdTask = await _taskService.CreateTaskAsync(createTaskDto);
             await _unitOfWork.SaveChangesAsync();
@@ -273,20 +299,24 @@ public class TasksController : ControllerBase
     [HttpPut("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(TaskDto))]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<TaskDto>> UpdateTask(Guid id, [FromBody] UpdateTaskDto updateTaskDto)
     {
         try
         {
             if (id != updateTaskDto.Id)
-            {
                 return BadRequest(new { message = "ID in URL does not match ID in request body" });
-            }
 
             if (!ModelState.IsValid)
-            {
                 return BadRequest(ModelState);
-            }
+
+            var existingTask = await _unitOfWork.Tasks.GetByIdAsync(id);
+            if (existingTask == null)
+                return NotFound(new { message = $"Task with ID {id} not found" });
+
+            if (!await CanDeveloperActAsync(existingTask.ProjectId))
+                return Forbid();
 
             var updatedTask = await _taskService.UpdateTaskAsync(updateTaskDto);
             await _unitOfWork.SaveChangesAsync();
@@ -323,26 +353,25 @@ public class TasksController : ControllerBase
     [HttpPatch("{id:guid}/status")]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(TaskDto))]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<TaskDto>> UpdateTaskStatus(Guid id, [FromBody] UpdateTaskStatusDto updateStatusDto)
     {
         try
         {
             if (id != updateStatusDto.TaskId)
-            {
                 return BadRequest(new { message = "ID in URL does not match TaskId in request body" });
-            }
 
             if (!ModelState.IsValid)
-            {
                 return BadRequest(ModelState);
-            }
 
             var task = await _unitOfWork.Tasks.GetByIdAsync(id);
             if (task == null)
-            {
                 return NotFound(new { message = $"Task with ID {id} not found" });
-            }
+
+            // Member, Developer and Manager can change status
+            if (!await HasProjectAccessAsync(task.ProjectId))
+                return Forbid();
 
             task.UpdateStatusFromDto(updateStatusDto);
             await _unitOfWork.SaveChangesAsync();
@@ -369,26 +398,24 @@ public class TasksController : ControllerBase
     [HttpPatch("{id:guid}/priority")]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(TaskDto))]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<TaskDto>> UpdateTaskPriority(Guid id, [FromBody] UpdateTaskPriorityDto updatePriorityDto)
     {
         try
         {
             if (id != updatePriorityDto.TaskId)
-            {
                 return BadRequest(new { message = "ID in URL does not match TaskId in request body" });
-            }
 
             if (!ModelState.IsValid)
-            {
                 return BadRequest(ModelState);
-            }
 
             var task = await _unitOfWork.Tasks.GetByIdAsync(id);
             if (task == null)
-            {
                 return NotFound(new { message = $"Task with ID {id} not found" });
-            }
+
+            if (!await CanDeveloperActAsync(task.ProjectId))
+                return Forbid();
 
             task.UpdatePriorityFromDto(updatePriorityDto);
             await _unitOfWork.SaveChangesAsync();
@@ -414,11 +441,19 @@ public class TasksController : ControllerBase
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteTask(Guid id)
     {
         try
         {
+            var taskToDelete = await _unitOfWork.Tasks.GetByIdAsync(id);
+            if (taskToDelete == null)
+                return NotFound(new { message = $"Task with ID {id} not found" });
+
+            if (!await IsManagerAsync(taskToDelete.ProjectId))
+                return Forbid();
+
             await _taskService.DeleteTaskAsync(id);
             await _unitOfWork.SaveChangesAsync();
 
@@ -452,22 +487,26 @@ public class TasksController : ControllerBase
     [HttpPost("{id:guid}/assign")]
     [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(TaskAssignmentDto))]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<TaskAssignmentDto>> AssignUserToTask(
-        Guid id, 
+        Guid id,
         [FromBody] AssignTaskDto assignTaskDto)
     {
         try
         {
             if (id != assignTaskDto.TaskId)
-            {
                 return BadRequest(new { message = "ID in URL does not match TaskId in request body" });
-            }
 
             if (!ModelState.IsValid)
-            {
                 return BadRequest(ModelState);
-            }
+
+            var taskForAssign = await _unitOfWork.Tasks.GetByIdAsync(id);
+            if (taskForAssign == null)
+                return NotFound(new { message = $"Task with ID {id} not found" });
+
+            if (!await CanDeveloperActAsync(taskForAssign.ProjectId))
+                return Forbid();
 
             var assignment = await _taskService.AssignUserToTaskAsync(assignTaskDto);
             await _unitOfWork.SaveChangesAsync();

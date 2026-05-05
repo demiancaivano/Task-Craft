@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using TaskCraft.Core.Enums;
 
 namespace TaskCraft.Application.DTOs.User;
 
@@ -22,4 +23,10 @@ public class UpdateUserDto
 
     [StringLength(500, MinimumLength = 6, ErrorMessage = "Password must be at least 6 characters")]
     public string? NewPassword { get; set; }
+
+    public string? FirstName { get; set; }
+
+    public string? LastName { get; set; }
+
+    public UserRole Role { get; set; } = UserRole.User;
 }

@@ -1,3 +1,5 @@
+using TaskCraft.Core.Enums;
+
 namespace TaskCraft.Application.DTOs.Auth;
 
 public class LoginResponseDto
@@ -7,6 +9,7 @@ public class LoginResponseDto
     public string Email { get; set; } = string.Empty;
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
+    public UserRole Role { get; set; }
     public string AccessToken { get; set; } = string.Empty;
     public string RefreshToken { get; set; } = string.Empty;
     public DateTime AccessTokenExpiration { get; set; }

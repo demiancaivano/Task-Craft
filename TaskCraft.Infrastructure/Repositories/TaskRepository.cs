@@ -44,6 +44,12 @@ public class TaskRepository : Repository<TaskEntity>, ITaskRepository
     {
         return await _dbSet
             .Where(t => t.ProjectId == projectId)
+            .Include(t => t.Project)
+            .Include(t => t.ParentTask)
+            .Include(t => t.SubTasks)
+            .Include(t => t.Comments)
+            .Include(t => t.Assignments)
+                .ThenInclude(a => a.User)
             .ToListAsync(cancellationToken);
     }
 

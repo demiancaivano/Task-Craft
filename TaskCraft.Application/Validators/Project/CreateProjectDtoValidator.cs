@@ -19,8 +19,5 @@ public class CreateProjectDtoValidator : AbstractValidator<CreateProjectDto>
         RuleFor(x => x.Description)
             .MaximumLength(1000).WithMessage("Description cannot exceed 1000 characters")
             .When(x => !string.IsNullOrWhiteSpace(x.Description));
-
-        RuleFor(x => x.OwnerId)
-            .NotEmpty().WithMessage("Owner ID is required");
     }
 }

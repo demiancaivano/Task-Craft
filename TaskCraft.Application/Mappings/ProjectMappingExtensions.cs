@@ -12,8 +12,21 @@ public static class ProjectMappingExtensions
     /// Converts Project entity to ProjectDto
     /// Calculates MemberCount and TaskCount from collections
     /// </summary>
-    public static ProjectDto ToDto(this Project project)
+    public static ProjectDto ToDto(this Project project, Guid? currentUserId = null)
     {
+        string? currentUserRole = null;
+        if (currentUserId.HasValue)
+        {
+            if (project.OwnerId == currentUserId.Value)
+                currentUserRole = "Manager";
+            else
+            {
+                var membership = project.Members?.FirstOrDefault(m => m.UserId == currentUserId.Value && !m.IsDeleted);
+                if (membership != null)
+                    currentUserRole = membership.Role.ToString();
+            }
+        }
+
         return new ProjectDto
         {
             Id = project.Id,
@@ -23,7 +36,9 @@ public static class ProjectMappingExtensions
             OwnerUsername = project.Owner?.Username ?? "Unknown",
             CreatedAt = project.CreatedAt,
             MemberCount = project.Members?.Count(m => !m.IsDeleted) ?? 0,
-            TaskCount = project.Tasks?.Count(t => !t.IsDeleted) ?? 0
+            TaskCount = project.Tasks?.Count(t => !t.IsDeleted && t.ParentTaskId == null) ?? 0,
+            SubTaskCount = project.Tasks?.Count(t => !t.IsDeleted && t.ParentTaskId != null) ?? 0,
+            CurrentUserRole = currentUserRole
         };
     }
 
@@ -54,9 +69,9 @@ public static class ProjectMappingExtensions
     /// <summary>
     /// Converts a collection of Project entities to ProjectDto list
     /// </summary>
-    public static List<ProjectDto> ToDtoList(this IEnumerable<Project> projects)
+    public static List<ProjectDto> ToDtoList(this IEnumerable<Project> projects, Guid? currentUserId = null)
     {
-        return projects.Select(p => p.ToDto()).ToList();
+        return projects.Select(p => p.ToDto(currentUserId)).ToList();
     }
 
     /// <summary>

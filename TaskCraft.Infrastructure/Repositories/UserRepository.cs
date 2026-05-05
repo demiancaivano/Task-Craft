@@ -42,4 +42,21 @@ public class UserRepository : Repository<User>, IUserRepository
             .Where(u => u.Role == role)
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<(IEnumerable<User> Items, int TotalCount)> GetPagedAsync(int page, int pageSize, bool includeDeleted = false, CancellationToken cancellationToken = default)
+    {
+        var query = includeDeleted
+            ? _dbSet.IgnoreQueryFilters()
+            : _dbSet.Where(u => !u.IsDeleted);
+
+        var totalCount = await query.CountAsync(cancellationToken);
+
+        var items = await query
+            .OrderByDescending(u => u.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        return (items, totalCount);
+    }
 }

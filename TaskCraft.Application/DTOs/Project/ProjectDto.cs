@@ -14,4 +14,6 @@ public class ProjectDto
     public DateTime CreatedAt { get; set; }
     public int MemberCount { get; set; }
     public int TaskCount { get; set; }
+    public int SubTaskCount { get; set; }
+    public string? CurrentUserRole { get; set; }
 }

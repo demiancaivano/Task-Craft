@@ -36,7 +36,11 @@ public static class TaskMappingExtensions
             AssigneeCount = task.Assignments?.Count(a => !a.IsDeleted) ?? 0,
             SubTaskCount = task.SubTasks?.Count(st => !st.IsDeleted) ?? 0,
             CommentCount = task.Comments?.Count(c => !c.IsDeleted) ?? 0,
-            HasSubTasks = task.SubTasks?.Any(st => !st.IsDeleted) ?? false
+            HasSubTasks = task.SubTasks?.Any(st => !st.IsDeleted) ?? false,
+            Assignees = task.Assignments?
+                .Where(a => !a.IsDeleted && a.User != null)
+                .Select(a => new TaskAssigneeDto { UserId = a.UserId, Username = a.User!.Username })
+                .ToList() ?? []
         };
     }
 

@@ -21,6 +21,10 @@ public class CreateUserDto
     [StringLength(500, MinimumLength = 6, ErrorMessage = "Password must be at least 6 characters")]
     public string? Password { get; set; }
 
+    public string? FirstName { get; set; }
+
+    public string? LastName { get; set; }
+
     public UserRole Role { get; set; } = UserRole.User;
 
     public bool IsAnonymous { get; set; } = false;

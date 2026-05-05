@@ -1,7 +1,10 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TaskCraft.Application.DTOs.Project;
 using TaskCraft.Application.Interfaces;
 using TaskCraft.Application.Mappings;
+using TaskCraft.Core.Enums;
 using TaskCraft.Core.Interfaces;
 
 namespace TaskCraft.API.Controllers;
@@ -12,6 +15,7 @@ namespace TaskCraft.API.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class ProjectsController : ControllerBase
 {
     private readonly IProjectService _projectService;
@@ -28,6 +32,19 @@ public class ProjectsController : ControllerBase
         _logger = logger;
     }
 
+    private Guid GetCurrentUserId()
+    {
+        var sub = User.FindFirstValue(ClaimTypes.NameIdentifier)
+               ?? User.FindFirstValue("sub");
+        return Guid.Parse(sub!);
+    }
+
+    private async Task<ProjectRole?> GetCallerRoleAsync(Guid projectId)
+    {
+        var userId = GetCurrentUserId();
+        return await _projectService.GetUserRoleInProjectAsync(userId, projectId);
+    }
+
     /// <summary>
     /// Get all projects (optionally include soft-deleted)
     /// </summary>
@@ -35,15 +52,16 @@ public class ProjectsController : ControllerBase
     /// <returns>List of projects</returns>
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<ProjectDto>))]
-    public async Task<ActionResult<IEnumerable<ProjectDto>>> GetAllProjects([FromQuery] bool includeDeleted = false)
+    public async Task<ActionResult<IEnumerable<ProjectDto>>> GetAllProjects()
     {
         try
         {
-            var projects = await _projectService.GetAllProjectsAsync(includeDeleted);
-            var projectDtos = projects.ToDtoList();
+            var userId = GetCurrentUserId();
+            var projects = await _unitOfWork.Projects.GetByUserIdAsync(userId);
+            var projectDtos = projects.ToDtoList(userId);
 
-            _logger.LogInformation("Retrieved {Count} projects (includeDeleted: {IncludeDeleted})", 
-                projectDtos.Count, includeDeleted);
+            _logger.LogInformation("Retrieved {Count} projects for user {UserId}",
+                projectDtos.Count, userId);
 
             return Ok(projectDtos);
         }
@@ -74,7 +92,8 @@ public class ProjectsController : ControllerBase
                 return NotFound(new { message = $"Project with ID {id} not found" });
             }
 
-            var projectDto = project.ToDto();
+            var userId = GetCurrentUserId();
+            var projectDto = project.ToDto(userId);
             _logger.LogInformation("Retrieved project {ProjectId}", id);
 
             return Ok(projectDto);
@@ -126,9 +145,10 @@ public class ProjectsController : ControllerBase
         try
         {
             if (!ModelState.IsValid)
-            {
                 return BadRequest(ModelState);
-            }
+
+            // Override ownerId with authenticated user
+            createProjectDto.OwnerId = GetCurrentUserId();
 
             var createdProject = await _projectService.CreateProjectAsync(createProjectDto);
             await _unitOfWork.SaveChangesAsync();
@@ -168,20 +188,21 @@ public class ProjectsController : ControllerBase
     [HttpPut("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ProjectDto))]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ProjectDto>> UpdateProject(Guid id, [FromBody] UpdateProjectDto updateProjectDto)
     {
         try
         {
             if (id != updateProjectDto.Id)
-            {
                 return BadRequest(new { message = "ID in URL does not match ID in request body" });
-            }
 
             if (!ModelState.IsValid)
-            {
                 return BadRequest(ModelState);
-            }
+
+            var role = await GetCallerRoleAsync(id);
+            if (role != ProjectRole.Manager)
+                return Forbid();
 
             var updatedProject = await _projectService.UpdateProjectAsync(updateProjectDto);
             await _unitOfWork.SaveChangesAsync();
@@ -215,11 +236,16 @@ public class ProjectsController : ControllerBase
     /// <returns>No content on success</returns>
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteProject(Guid id)
     {
         try
         {
+            var role = await GetCallerRoleAsync(id);
+            if (role != ProjectRole.Manager)
+                return Forbid();
+
             await _projectService.DeleteProjectAsync(id);
             await _unitOfWork.SaveChangesAsync();
 
@@ -274,22 +300,23 @@ public class ProjectsController : ControllerBase
     [HttpPost("{id:guid}/members")]
     [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(ProjectMemberDto))]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ProjectMemberDto>> AddProjectMember(
-        Guid id, 
+        Guid id,
         [FromBody] AddProjectMemberDto addMemberDto)
     {
         try
         {
-            if (id != addMemberDto.ProjectId)
-            {
-                return BadRequest(new { message = "ID in URL does not match ProjectId in request body" });
-            }
+            // Always use the project ID from the route
+            addMemberDto.ProjectId = id;
 
             if (!ModelState.IsValid)
-            {
                 return BadRequest(ModelState);
-            }
+
+            var role = await GetCallerRoleAsync(id);
+            if (role != ProjectRole.Manager)
+                return Forbid();
 
             var member = await _projectService.AddMemberToProjectAsync(addMemberDto);
             await _unitOfWork.SaveChangesAsync();
@@ -330,11 +357,16 @@ public class ProjectsController : ControllerBase
     [HttpDelete("{projectId:guid}/members/{userId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> RemoveProjectMember(Guid projectId, Guid userId)
     {
         try
         {
+            var role = await GetCallerRoleAsync(projectId);
+            if (role != ProjectRole.Manager)
+                return Forbid();
+
             await _projectService.RemoveMemberFromProjectAsync(projectId, userId);
             await _unitOfWork.SaveChangesAsync();
 

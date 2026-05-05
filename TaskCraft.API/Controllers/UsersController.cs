@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using TaskCraft.Application.DTOs;
 using TaskCraft.Application.DTOs.User;
 using TaskCraft.Application.Interfaces;
 using TaskCraft.Application.Mappings;
@@ -29,22 +30,36 @@ public class UsersController : ControllerBase
     }
 
     /// <summary>
-    /// Retrieves all users in the system
+    /// Retrieves a paginated list of users
     /// </summary>
+    /// <param name="page">Page number (1-based, default: 1)</param>
+    /// <param name="pageSize">Number of users per page (default: 20, max: 100)</param>
     /// <param name="includeDeleted">Include soft-deleted users (default: false)</param>
-    /// <returns>List of all users</returns>
-    /// <response code="200">Returns the list of users</response>
+    /// <returns>Paginated list of users</returns>
+    /// <response code="200">Returns the paginated list of users</response>
     [HttpGet]
-    [ProducesResponseType(typeof(IEnumerable<UserDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<IEnumerable<UserDto>>> GetAllUsers([FromQuery] bool includeDeleted = false)
+    [ProducesResponseType(typeof(PagedResult<UserDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PagedResult<UserDto>>> GetAllUsers(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        [FromQuery] bool includeDeleted = false)
     {
-        var users = await _userService.GetAllUsersAsync(includeDeleted);
-        var userDtos = users.ToDtoList();
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, 100);
 
-        _logger.LogInformation("Retrieved {Count} users (includeDeleted: {IncludeDeleted})", 
-            userDtos.Count, includeDeleted);
+        var (users, totalCount) = await _unitOfWork.Users.GetPagedAsync(page, pageSize, includeDeleted);
+        var userDtos = users.Where(u => !u.IsAnonymous).ToDtoList();
 
-        return Ok(userDtos);
+        _logger.LogInformation("Retrieved {Count} users (page: {Page}, pageSize: {PageSize})",
+            userDtos.Count, page, pageSize);
+
+        return Ok(new PagedResult<UserDto>
+        {
+            Items = userDtos,
+            TotalCount = totalCount,
+            Page = page,
+            PageSize = pageSize,
+        });
     }
 
     /// <summary>
@@ -125,9 +140,11 @@ public class UsersController : ControllerBase
                 return BadRequest(ModelState);
             }
 
-            // TODO: Hash password before passing to service
-            // For now, we'll pass the plain password (should be hashed in production)
-            var createdUser = await _userService.CreateUserAsync(createUserDto, createUserDto.Password);
+            if (string.IsNullOrEmpty(createUserDto.Password))
+                return BadRequest(new { message = "Password is required" });
+
+            var hashedPassword = BCrypt.Net.BCrypt.HashPassword(createUserDto.Password);
+            var createdUser = await _userService.CreateUserAsync(createUserDto, hashedPassword);
             await _unitOfWork.SaveChangesAsync();
 
             var userDto = createdUser.ToDto();
@@ -175,11 +192,10 @@ public class UsersController : ControllerBase
                 return BadRequest(ModelState);
             }
 
-            // TODO: Hash new password if provided
             string? hashedPassword = null;
             if (!string.IsNullOrEmpty(updateUserDto.NewPassword))
             {
-                hashedPassword = updateUserDto.NewPassword; // Should be hashed in production
+                hashedPassword = BCrypt.Net.BCrypt.HashPassword(updateUserDto.NewPassword);
             }
 
             var updatedUser = await _userService.UpdateUserAsync(updateUserDto, hashedPassword);

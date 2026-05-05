@@ -9,4 +9,5 @@ public interface IUserRepository : IRepository<User>
     Task<bool> EmailExistsAsync(string email, CancellationToken cancellationToken = default);
     Task<bool> UsernameExistsAsync(string username, CancellationToken cancellationToken = default);
     Task<IEnumerable<User>> GetUsersByRoleAsync(Enums.UserRole role, CancellationToken cancellationToken = default);
+    Task<(IEnumerable<User> Items, int TotalCount)> GetPagedAsync(int page, int pageSize, bool includeDeleted = false, CancellationToken cancellationToken = default);
 }

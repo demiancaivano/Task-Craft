@@ -10,9 +10,6 @@ public class AddProjectMemberDtoValidator : AbstractValidator<AddProjectMemberDt
 {
     public AddProjectMemberDtoValidator()
     {
-        RuleFor(x => x.ProjectId)
-            .NotEmpty().WithMessage("Project ID is required");
-
         RuleFor(x => x.UserId)
             .NotEmpty().WithMessage("User ID is required");
 
