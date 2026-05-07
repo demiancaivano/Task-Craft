@@ -39,7 +39,7 @@ export function ProjectMembersModal({ isOpen, onClose, projectId }: ProjectMembe
         userService.getAll(),
       ])
       setMembers(membersRes.data)
-      setUsers(usersRes.data)
+      setUsers(usersRes.data.items)
     } catch {
       setError('Failed to load members.')
     } finally {
