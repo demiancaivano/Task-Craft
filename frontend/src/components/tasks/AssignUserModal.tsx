@@ -72,7 +72,7 @@ export function AssignUserModal({ isOpen, onClose, task, projectId, onAssigned }
                 type="button"
                 disabled={!!isAssigning}
                 onClick={() => handleAssign(member.userId)}
-                className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-black/5 disabled:opacity-50"
+                className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-black/5 disabled:opacity-50 dark:hover:bg-white/8"
               >
                 <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent/15 text-[11px] font-bold text-accent">
                   {member.username.charAt(0).toUpperCase()}

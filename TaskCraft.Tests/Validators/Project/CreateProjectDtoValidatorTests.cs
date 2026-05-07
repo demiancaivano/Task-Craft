@@ -193,8 +193,10 @@ public class CreateProjectDtoValidatorTests
     #region OwnerId Validation
 
     [Fact]
-    public void Should_Fail_When_OwnerId_Is_Empty()
+    public void Should_Pass_When_OwnerId_Is_Empty_Because_It_Is_Set_By_Controller()
     {
+        // OwnerId is injected from the authenticated user's JWT in the controller,
+        // so the DTO validator intentionally does not validate it.
         // Arrange
         var dto = CreateValidDto();
         dto.OwnerId = Guid.Empty;
@@ -203,10 +205,8 @@ public class CreateProjectDtoValidatorTests
         var result = _validator.Validate(dto);
 
         // Assert
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => 
-            e.PropertyName == "OwnerId" &&
-            e.ErrorMessage == "Owner ID is required");
+        result.IsValid.Should().BeTrue();
+        result.Errors.Should().NotContain(e => e.PropertyName == "OwnerId");
     }
 
     [Fact]
@@ -245,7 +245,6 @@ public class CreateProjectDtoValidatorTests
         result.IsValid.Should().BeFalse();
         result.Errors.Should().Contain(e => e.PropertyName == "Name");
         result.Errors.Should().Contain(e => e.PropertyName == "Description");
-        result.Errors.Should().Contain(e => e.PropertyName == "OwnerId");
     }
 
     #endregion

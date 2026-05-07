@@ -125,7 +125,7 @@ export function TaskDetailModal({
                 value={task.status}
                 onChange={(e) => handleStatusChange(Number(e.target.value) as TaskStatus)}
                 disabled={isUpdating}
-                className="rounded-lg border border-black/15 px-2 py-1.5 text-sm text-ink focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50"
+                className="rounded-lg border border-black/15 bg-white px-2 py-1.5 text-sm text-ink focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 dark:border-white/15 dark:bg-surface"
               >
                 {STATUS_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>
@@ -143,7 +143,7 @@ export function TaskDetailModal({
                 value={task.priority}
                 onChange={(e) => handlePriorityChange(Number(e.target.value) as TaskPriority)}
                 disabled={isUpdating}
-                className="rounded-lg border border-black/15 px-2 py-1.5 text-sm text-ink focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50"
+                className="rounded-lg border border-black/15 bg-white px-2 py-1.5 text-sm text-ink focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 dark:border-white/15 dark:bg-surface"
               >
                 {PRIORITY_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>
@@ -253,7 +253,7 @@ export function TaskDetailModal({
           ) : (
             <ul className="mt-1.5 flex flex-col gap-1">
               {subtasks.map((st) => (
-                <li key={st.id} className="flex items-center gap-2 rounded-md bg-black/3 px-2 py-1.5 text-sm">
+                <li key={st.id} className="flex items-center gap-2 rounded-md bg-black/3 px-2 py-1.5 text-sm dark:bg-white/5">
                   <StatusBadge status={st.status} />
                   <span className="text-ink">{st.title}</span>
                 </li>
@@ -264,12 +264,12 @@ export function TaskDetailModal({
 
         {/* Actions */}
         {(isManager || canDevelop) && (
-          <div className="flex justify-between border-t border-black/8 pt-3">
+          <div className="flex justify-between border-t border-black/8 pt-3 dark:border-white/8">
             {isManager && (
               <button
                 type="button"
                 onClick={() => { onClose(); onDelete(task) }}
-                className="rounded-lg px-3 py-1.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
+                className="rounded-lg px-3 py-1.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 dark:hover:bg-red-900/20"
               >
                 Delete task
               </button>

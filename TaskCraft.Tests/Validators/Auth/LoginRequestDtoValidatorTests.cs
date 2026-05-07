@@ -77,7 +77,7 @@ public class LoginRequestDtoValidatorTests
         result.IsValid.Should().BeFalse();
         result.Errors.Should().Contain(e => 
             e.PropertyName == "Username" && 
-            e.ErrorMessage == "Username is required");
+            e.ErrorMessage == "Username or email is required");
     }
 
     [Fact]
@@ -97,7 +97,7 @@ public class LoginRequestDtoValidatorTests
         result.IsValid.Should().BeFalse();
         result.Errors.Should().Contain(e => 
             e.PropertyName == "Username" && 
-            e.ErrorMessage == "Username must be at least 3 characters");
+            e.ErrorMessage == "Username or email must be at least 3 characters");
     }
 
     [Fact]
@@ -106,7 +106,7 @@ public class LoginRequestDtoValidatorTests
         // Arrange
         var dto = new LoginRequestDto
         {
-            Username = new string('a', 101),
+            Username = new string('a', 256),
             Password = "Password123"
         };
 
@@ -117,7 +117,7 @@ public class LoginRequestDtoValidatorTests
         result.IsValid.Should().BeFalse();
         result.Errors.Should().Contain(e => 
             e.PropertyName == "Username" && 
-            e.ErrorMessage == "Username cannot exceed 100 characters");
+            e.ErrorMessage == "Username or email cannot exceed 255 characters");
     }
 
     #endregion

@@ -39,7 +39,7 @@ export function RegisterPage() {
   }
 
   return (
-    <div className="rounded-2xl border border-black/10 bg-white/90 p-8 shadow-card backdrop-blur-md">
+    <div className="rounded-2xl border border-black/10 bg-white/90 p-8 shadow-card backdrop-blur-md dark:border-white/10 dark:bg-surface/90">
       <div className="mb-6">
         <p className="text-xs font-semibold uppercase tracking-widest text-accent">{APP_NAME}</p>
         <h1 className="mt-1 text-2xl font-semibold text-ink">Create account</h1>
@@ -56,7 +56,7 @@ export function RegisterPage() {
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
               placeholder="John"
-              className="rounded-xl border border-black/10 bg-white px-4 py-2.5 text-sm text-ink outline-none transition focus:border-accent/40 focus:ring-2 focus:ring-accent/20"
+              className="rounded-xl border border-black/10 bg-white px-4 py-2.5 text-sm text-ink outline-none transition focus:border-accent/40 focus:ring-2 focus:ring-accent/20 dark:border-white/10 dark:bg-surface"
               required
             />
           </label>
@@ -69,7 +69,7 @@ export function RegisterPage() {
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
               placeholder="Doe"
-              className="rounded-xl border border-black/10 bg-white px-4 py-2.5 text-sm text-ink outline-none transition focus:border-accent/40 focus:ring-2 focus:ring-accent/20"
+              className="rounded-xl border border-black/10 bg-white px-4 py-2.5 text-sm text-ink outline-none transition focus:border-accent/40 focus:ring-2 focus:ring-accent/20 dark:border-white/10 dark:bg-surface"
               required
             />
           </label>
@@ -84,7 +84,7 @@ export function RegisterPage() {
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             placeholder="Choose a username"
-            className="rounded-xl border border-black/10 bg-white px-4 py-2.5 text-sm text-ink outline-none transition focus:border-accent/40 focus:ring-2 focus:ring-accent/20"
+            className="rounded-xl border border-black/10 bg-white px-4 py-2.5 text-sm text-ink outline-none transition focus:border-accent/40 focus:ring-2 focus:ring-accent/20 dark:border-white/10 dark:bg-surface"
             required
             minLength={3}
           />
@@ -99,7 +99,7 @@ export function RegisterPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="your@email.com"
-            className="rounded-xl border border-black/10 bg-white px-4 py-2.5 text-sm text-ink outline-none transition focus:border-accent/40 focus:ring-2 focus:ring-accent/20"
+            className="rounded-xl border border-black/10 bg-white px-4 py-2.5 text-sm text-ink outline-none transition focus:border-accent/40 focus:ring-2 focus:ring-accent/20 dark:border-white/10 dark:bg-surface"
             required
           />
         </label>
@@ -113,7 +113,7 @@ export function RegisterPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="At least 8 characters"
-            className="rounded-xl border border-black/10 bg-white px-4 py-2.5 text-sm text-ink outline-none transition focus:border-accent/40 focus:ring-2 focus:ring-accent/20"
+            className="rounded-xl border border-black/10 bg-white px-4 py-2.5 text-sm text-ink outline-none transition focus:border-accent/40 focus:ring-2 focus:ring-accent/20 dark:border-white/10 dark:bg-surface"
             required
             minLength={8}
           />

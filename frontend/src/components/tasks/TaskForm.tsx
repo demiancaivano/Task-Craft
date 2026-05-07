@@ -119,7 +119,7 @@ export function TaskForm({
             minLength={3}
             maxLength={300}
             required
-            className="w-full rounded-lg border border-black/15 px-3 py-2 text-sm text-ink placeholder:text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+            className="w-full rounded-lg border border-black/15 bg-white px-3 py-2 text-sm text-ink placeholder:text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent dark:border-white/15 dark:bg-surface"
           />
         </div>
 
@@ -134,7 +134,7 @@ export function TaskForm({
             placeholder="Optional description"
             rows={3}
             maxLength={2000}
-            className="w-full resize-none rounded-lg border border-black/15 px-3 py-2 text-sm text-ink placeholder:text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+            className="w-full resize-none rounded-lg border border-black/15 bg-white px-3 py-2 text-sm text-ink placeholder:text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent dark:border-white/15 dark:bg-surface"
           />
         </div>
 
@@ -147,7 +147,7 @@ export function TaskForm({
               id="task-status"
               value={status}
               onChange={(e) => setStatus(Number(e.target.value) as TaskStatus)}
-              className="w-full rounded-lg border border-black/15 px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+              className="w-full rounded-lg border border-black/15 bg-white px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent dark:border-white/15 dark:bg-surface"
             >
               {STATUS_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>
@@ -165,7 +165,7 @@ export function TaskForm({
               id="task-priority"
               value={priority}
               onChange={(e) => setPriority(Number(e.target.value) as TaskPriority)}
-              className="w-full rounded-lg border border-black/15 px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+              className="w-full rounded-lg border border-black/15 bg-white px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent dark:border-white/15 dark:bg-surface"
             >
               {PRIORITY_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>
@@ -186,7 +186,7 @@ export function TaskForm({
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="w-full rounded-lg border border-black/15 px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+              className="w-full rounded-lg border border-black/15 bg-white px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent dark:border-white/15 dark:bg-surface"
             />
           </div>
 
@@ -199,7 +199,7 @@ export function TaskForm({
               type="date"
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
-              className="w-full rounded-lg border border-black/15 px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+              className="w-full rounded-lg border border-black/15 bg-white px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent dark:border-white/15 dark:bg-surface"
             />
           </div>
         </div>
@@ -211,7 +211,7 @@ export function TaskForm({
             type="button"
             onClick={onClose}
             disabled={isLoading}
-            className="rounded-lg border border-black/10 px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-black/5 disabled:opacity-50"
+            className="rounded-lg border border-black/10 px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-black/5 disabled:opacity-50 dark:border-white/10 dark:hover:bg-white/5"
           >
             Cancel
           </button>

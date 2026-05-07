@@ -1,0 +1,106 @@
+name: Deploy to Azure
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: '10.0.x'
+  SOLUTION_PATH: './TaskCraft.slnx'
+  API_PROJECT_PATH: './TaskCraft.API/TaskCraft.API.csproj'
+  FRONTEND_PATH: './frontend'
+
+jobs:
+  # ─────────────────────────────────────────────
+  # 1. Run all tests before deploying anything
+  # ─────────────────────────────────────────────
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore & Build
+        run: |
+          dotnet restore ${{ env.SOLUTION_PATH }}
+          dotnet build ${{ env.SOLUTION_PATH }} --configuration Release --no-restore
+
+      - name: Run tests
+        run: dotnet test ${{ env.SOLUTION_PATH }} --configuration Release --no-build --verbosity normal
+
+  # ─────────────────────────────────────────────
+  # 2. Deploy backend → Azure App Service
+  # ─────────────────────────────────────────────
+  deploy-api:
+    name: Deploy API
+    runs-on: ubuntu-latest
+    needs: test
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Publish API
+        run: |
+          dotnet publish ${{ env.API_PROJECT_PATH }} \
+            --configuration Release \
+            --output ./api-publish \
+            --no-restore
+
+      - name: Deploy to Azure App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: ./api-publish
+
+  # ─────────────────────────────────────────────
+  # 3. Deploy frontend → Azure Static Web Apps
+  # ─────────────────────────────────────────────
+  deploy-frontend:
+    name: Deploy Frontend
+    runs-on: ubuntu-latest
+    needs: test
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: ${{ env.FRONTEND_PATH }}/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ${{ env.FRONTEND_PATH }}
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: ${{ env.FRONTEND_PATH }}
+        env:
+          # Override the .env.production placeholder with the real URL from secrets
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+        run: npm run build
+
+      - name: Deploy to Azure Static Web Apps
+        uses: azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          action: upload
+          app_location: ${{ env.FRONTEND_PATH }}
+          output_location: dist
+          skip_app_build: true  # We built manually above to inject VITE_API_URL

@@ -52,7 +52,7 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer(options =>
 {
-    options.RequireHttpsMetadata = false; // Set to true in production
+    options.RequireHttpsMetadata = !builder.Environment.IsDevelopment(); // HTTPS required in production
     options.SaveToken = true;
     options.TokenValidationParameters = new TokenValidationParameters
     {
@@ -163,15 +163,14 @@ app.UseAuthorization();
 // Controllers
 app.MapControllers();
 
-// ===== Database Migration (Optional - Auto-apply migrations) =====
-// Uncomment the following lines to automatically apply migrations on startup
-/*
-using (var scope = app.Services.CreateScope())
+// ===== Database Migration =====
+// Auto-apply pending migrations on startup in non-development environments
+if (!app.Environment.IsDevelopment())
 {
+    using var scope = app.Services.CreateScope();
     var dbContext = scope.ServiceProvider.GetRequiredService<TaskCraftDbContext>();
     dbContext.Database.Migrate();
 }
-*/
 
 // ===== Run Application =====
 app.Run();

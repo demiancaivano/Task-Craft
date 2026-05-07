@@ -11,36 +11,52 @@ type KanbanColumnProps = {
   onTaskClick: (task: TaskDto) => void
   onAddTask?: () => void
   userRole: ProjectRoleType | null
+  hideTitleBar?: boolean
 }
 
-export function KanbanColumn({ title, tasks, allTasks, colorClass, onTaskClick, onAddTask, userRole }: KanbanColumnProps) {
+export function KanbanColumn({ title, tasks, allTasks, colorClass, onTaskClick, onAddTask, userRole, hideTitleBar = false }: KanbanColumnProps) {
   const canAddTask = userRole !== null && userRole <= ProjectRole.Developer
 
   const subtasksOf = (parentId: string) =>
     allTasks.filter((t) => t.parentTaskId === parentId)
 
   return (
-    <div className="flex w-72 shrink-0 flex-col gap-3">
-      {/* Column header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className={`h-2.5 w-2.5 rounded-full ${colorClass}`} aria-hidden="true" />
-          <span className="text-sm font-semibold text-ink">{title}</span>
-          <span className="rounded-full bg-black/8 px-1.5 py-0.5 text-xs font-medium text-muted dark:bg-white/10">
-            {tasks.length}
-          </span>
+    <div className="flex w-full shrink-0 flex-col gap-3 md:w-72">
+      {/* Column header — hidden when tab bar is shown (mobile) */}
+      {!hideTitleBar && (
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className={`h-2.5 w-2.5 rounded-full ${colorClass}`} aria-hidden="true" />
+            <span className="text-sm font-semibold text-ink">{title}</span>
+            <span className="rounded-full bg-black/8 px-1.5 py-0.5 text-xs font-medium text-muted dark:bg-white/10">
+              {tasks.length}
+            </span>
+          </div>
+          {onAddTask && canAddTask && (
+            <button
+              type="button"
+              onClick={onAddTask}
+              className="rounded p-1 text-muted transition-colors hover:bg-black/5 hover:text-ink dark:hover:bg-white/8"
+              aria-label={`Add task to ${title}`}
+            >
+              +
+            </button>
+          )}
         </div>
-        {onAddTask && canAddTask && (
+      )}
+
+      {/* When title bar is hidden, show add button standalone */}
+      {hideTitleBar && onAddTask && canAddTask && (
+        <div className="flex justify-end">
           <button
             type="button"
             onClick={onAddTask}
-            className="rounded p-1 text-muted transition-colors hover:bg-black/5 hover:text-ink dark:hover:bg-white/8"
-            aria-label={`Add task to ${title}`}
+            className="rounded-lg border border-black/10 px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:bg-black/5 hover:text-ink dark:border-white/10 dark:hover:bg-white/8"
           >
-            +
+            + Add task
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Task list */}
       <div className="flex flex-col gap-2">
