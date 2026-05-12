@@ -95,11 +95,13 @@ export function ProjectMembersModal({ isOpen, onClose, projectId }: ProjectMembe
             value={selectedUserId}
             onChange={(e) => setSelectedUserId(e.target.value)}
             disabled={isAdding || availableUsers.length === 0}
-            className="w-full rounded-lg border border-black/15 px-2 py-1.5 text-sm text-ink focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50"
+            className="w-full rounded-lg border border-black/15 bg-white px-2 py-1.5 text-sm text-ink focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 dark:border-white/15 dark:bg-surface"
           >
-            <option value="">Select user…</option>
+            <option value="" className="bg-white text-ink dark:bg-surface dark:text-ink">
+              Select user…
+            </option>
             {availableUsers.map((u) => (
-              <option key={u.id} value={u.id}>
+              <option key={u.id} value={u.id} className="bg-white text-ink dark:bg-surface dark:text-ink">
                 {u.username} ({u.email})
               </option>
             ))}
@@ -110,10 +112,14 @@ export function ProjectMembersModal({ isOpen, onClose, projectId }: ProjectMembe
               value={selectedRole}
               onChange={(e) => setSelectedRole(Number(e.target.value) as ProjectRole)}
               disabled={isAdding}
-              className="flex-1 rounded-lg border border-black/15 px-2 py-1.5 text-sm text-ink focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50"
+              className="flex-1 rounded-lg border border-black/15 bg-white px-2 py-1.5 text-sm text-ink focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 dark:border-white/15 dark:bg-surface"
             >
               {ROLE_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
+                <option
+                  key={opt.value}
+                  value={opt.value}
+                  className="bg-white text-ink dark:bg-surface dark:text-ink"
+                >
                   {opt.label}
                 </option>
               ))}
