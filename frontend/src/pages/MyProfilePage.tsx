@@ -4,6 +4,7 @@ import { userService } from '../services/userService'
 import { RoleBadge } from '../components/ui/Badge'
 import { UserRole } from '../types/user'
 import type { UserDto } from '../types/user'
+import { setStoredSession } from '../utils/authStorage'
 
 const INPUT_CLASS =
   'w-full rounded-lg border border-black/15 px-3 py-2 text-sm text-ink placeholder:text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent dark:border-white/15 dark:bg-surface'
@@ -65,7 +66,28 @@ export function MyProfilePage() {
         lastName: lastName.trim() || undefined,
         role: user.role,
       })
-      setUser(res.data)
+      const updatedUser = res.data
+      setUser(updatedUser)
+
+      const storedSession = session
+      if (storedSession?.user.id === updatedUser.id) {
+        setStoredSession({
+          ...storedSession,
+          user: {
+            ...storedSession.user,
+            username: updatedUser.username,
+            email: updatedUser.email,
+            firstName: updatedUser.firstName ?? '',
+            lastName: updatedUser.lastName ?? '',
+            role: updatedUser.role,
+          },
+        })
+      }
+
+      setUsername(updatedUser.username)
+      setEmail(updatedUser.email)
+      setFirstName(updatedUser.firstName ?? '')
+      setLastName(updatedUser.lastName ?? '')
       setInfoSuccess(true)
       setTimeout(() => setInfoSuccess(false), 3000)
     } catch {

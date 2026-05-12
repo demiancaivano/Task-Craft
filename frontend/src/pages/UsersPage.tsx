@@ -5,6 +5,7 @@ import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { userService } from '../services/userService'
 import { useAuth } from '../context/AuthContext'
 import type { CreateUserDto, UpdateUserDto, UserDto } from '../types/user'
+import { setStoredSession } from '../utils/authStorage'
 
 const PAGE_SIZE = 20
 
@@ -48,7 +49,22 @@ export function UsersPage() {
 
   const handleEdit = async (data: CreateUserDto | UpdateUserDto) => {
     if (!editingUser) return
-    await userService.update(editingUser.id, data as UpdateUserDto)
+    const res = await userService.update(editingUser.id, data as UpdateUserDto)
+
+    if (session?.user.id === editingUser.id) {
+      setStoredSession({
+        ...session,
+        user: {
+          ...session.user,
+          username: res.data.username,
+          email: res.data.email,
+          firstName: res.data.firstName ?? '',
+          lastName: res.data.lastName ?? '',
+          role: res.data.role,
+        },
+      })
+    }
+
     await fetchUsers(page)
   }
 
