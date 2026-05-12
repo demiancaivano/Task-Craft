@@ -139,13 +139,7 @@ public class UserService : IUserService
         if (existingUser == null)
             throw new NotFoundException("User", updateUserDto.Id);
 
-        existingUser.Username = updateUserDto.Username;
-        existingUser.Email = updateUserDto.Email;
-
-        if (!string.IsNullOrEmpty(hashedPassword))
-        {
-            existingUser.PasswordHash = hashedPassword;
-        }
+        existingUser.UpdateFromDto(updateUserDto, hashedPassword);
 
         return await UpdateUserAsync(existingUser, cancellationToken);
     }
