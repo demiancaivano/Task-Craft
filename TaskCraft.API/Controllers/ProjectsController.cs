@@ -5,6 +5,7 @@ using TaskCraft.Application.DTOs.Project;
 using TaskCraft.Application.Interfaces;
 using TaskCraft.Application.Mappings;
 using TaskCraft.Core.Enums;
+using TaskCraft.Core.Exceptions;
 using TaskCraft.Core.Interfaces;
 
 namespace TaskCraft.API.Controllers;
@@ -387,6 +388,45 @@ public class ProjectsController : ControllerBase
         {
             _logger.LogError(ex, "Error removing member from project {ProjectId}", projectId);
             return StatusCode(500, new { message = "An error occurred while removing the member" });
+        }
+    }
+
+    /// <summary>
+    /// Leave a project as the current authenticated user.
+    /// Managers (project owners) cannot leave their own project.
+    /// </summary>
+    /// <param name="projectId">Project ID</param>
+    /// <returns>No content on success</returns>
+    [HttpDelete("{projectId:guid}/leave")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> LeaveProject(Guid projectId)
+    {
+        try
+        {
+            var currentUserId = GetCurrentUserId();
+
+            await _projectService.RemoveMemberFromProjectAsync(projectId, currentUserId);
+            await _unitOfWork.SaveChangesAsync();
+
+            _logger.LogInformation("User {UserId} left project {ProjectId}", currentUserId, projectId);
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            _logger.LogWarning(ex, "Project or membership not found while user attempted to leave: {Message}", ex.Message);
+            return NotFound(new { message = ex.Message });
+        }
+        catch (BadRequestException ex)
+        {
+            _logger.LogWarning(ex, "User failed to leave project: {Message}", ex.Message);
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error while user leaving project {ProjectId}", projectId);
+            return StatusCode(500, new { message = "An error occurred while leaving the project" });
         }
     }
 }

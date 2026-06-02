@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { ProjectCard } from '../components/projects/ProjectCard'
 import { ProjectForm } from '../components/projects/ProjectForm'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
+import { Toast } from '../components/ui/Toast'
 import { projectService } from '../services/projectService'
 import { useAuth } from '../context/AuthContext'
 import {
@@ -13,6 +15,8 @@ import {
 import type { CreateProjectDto, ProjectDto, UpdateProjectDto } from '../types/project'
 
 export function ProjectsPage() {
+  const location = useLocation()
+  const navigate = useNavigate()
   const { isAuthenticated } = useAuth()
   const [projects, setProjects] = useState<ProjectDto[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -21,6 +25,17 @@ export function ProjectsPage() {
   const [editingProject, setEditingProject] = useState<ProjectDto | null>(null)
   const [deletingProject, setDeletingProject] = useState<ProjectDto | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [leavingProject, setLeavingProject] = useState<ProjectDto | null>(null)
+  const [isLeaving, setIsLeaving] = useState(false)
+  const [toastMessage, setToastMessage] = useState<string | null>(null)
+
+  useEffect(() => {
+    const state = location.state as { toastMessage?: string } | null
+    if (!state?.toastMessage) return
+
+    setToastMessage(state.toastMessage)
+    navigate(location.pathname, { replace: true, state: {} })
+  }, [location.pathname, location.state, navigate])
 
   const fetchProjects = useCallback(async () => {
     setIsLoading(true)
@@ -82,6 +97,22 @@ export function ProjectsPage() {
     }
   }
 
+  const handleLeave = async () => {
+    if (!leavingProject || !isAuthenticated) return
+
+    setIsLeaving(true)
+    try {
+      await projectService.leave(leavingProject.id)
+      setToastMessage(`You left "${leavingProject.name}" successfully.`)
+      setLeavingProject(null)
+      await fetchProjects()
+    } catch {
+      setError('Failed to leave project.')
+    } finally {
+      setIsLeaving(false)
+    }
+  }
+
   const openEdit = (project: ProjectDto) => {
     setEditingProject(project)
     setFormOpen(true)
@@ -94,6 +125,10 @@ export function ProjectsPage() {
 
   return (
     <div className="flex flex-col gap-6">
+      {toastMessage && (
+        <Toast message={toastMessage} onClose={() => setToastMessage(null)} />
+      )}
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-ink">Projects</h1>
@@ -142,6 +177,7 @@ export function ProjectsPage() {
               project={project}
               onEdit={openEdit}
               onDelete={setDeletingProject}
+              onLeave={setLeavingProject}
             />
           ))}
         </div>
@@ -161,6 +197,15 @@ export function ProjectsPage() {
         title="Delete Project"
         message={`Are you sure you want to delete "${deletingProject?.name}"? This action cannot be undone.`}
         isLoading={isDeleting}
+      />
+
+      <ConfirmDialog
+        isOpen={!!leavingProject}
+        onClose={() => setLeavingProject(null)}
+        onConfirm={handleLeave}
+        title="Leave Project"
+        message={`Are you sure you want to leave "${leavingProject?.name}"?`}
+        isLoading={isLeaving}
       />
     </div>
   )

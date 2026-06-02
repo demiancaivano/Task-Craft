@@ -34,4 +34,7 @@ export const projectService = {
 
   removeMember: (projectId: string, userId: string) =>
     apiClient.delete(`/projects/${projectId}/members/${userId}`),
+
+  leave: (projectId: string) =>
+    apiClient.delete(`/projects/${projectId}/leave`),
 }

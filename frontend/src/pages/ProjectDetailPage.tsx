@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { KanbanBoard } from '../components/tasks/KanbanBoard'
 import { TaskForm } from '../components/tasks/TaskForm'
 import { TaskDetailModal } from '../components/tasks/TaskDetailModal'
@@ -27,6 +27,7 @@ import {
 
 export function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
   const { isAuthenticated, session } = useAuth()
   const isGuest = !isAuthenticated
 
@@ -46,6 +47,8 @@ export function ProjectDetailPage() {
   const [parentTaskId, setParentTaskId] = useState<string | undefined>(undefined)
   const [deletingTask, setDeletingTask] = useState<TaskDto | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isLeaving, setIsLeaving] = useState(false)
+  const [leaveDialogOpen, setLeaveDialogOpen] = useState(false)
   const [assignModalOpen, setAssignModalOpen] = useState(false)
   const [membersModalOpen, setMembersModalOpen] = useState(false)
 
@@ -183,6 +186,23 @@ export function ProjectDetailPage() {
     silentRefresh()
   }
 
+  const handleLeaveProject = async () => {
+    if (!id || isGuest || userRole === ProjectRole.Manager) return
+
+    setIsLeaving(true)
+    try {
+      await projectService.leave(id)
+      navigate(ROUTES.projects, {
+        state: { toastMessage: `You left "${project?.name ?? 'the project'}" successfully.` },
+      })
+    } catch {
+      setError('Failed to leave project.')
+    } finally {
+      setIsLeaving(false)
+      setLeaveDialogOpen(false)
+    }
+  }
+
   if (isLoading) {
     return <div className="py-12 text-center text-sm text-muted">Loading project…</div>
   }
@@ -234,6 +254,15 @@ export function ProjectDetailPage() {
               className="rounded-lg border border-black/10 px-3 py-2 text-sm font-medium text-ink transition-colors hover:bg-black/5"
             >
               Members
+            </button>
+          )}
+          {!isGuest && userRole !== null && userRole !== ProjectRole.Manager && (
+            <button
+              type="button"
+              onClick={() => setLeaveDialogOpen(true)}
+              className="rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
+            >
+              Leave Project
             </button>
           )}
           {(isGuest || (userRole !== null && userRole <= ProjectRole.Developer)) && (
@@ -302,6 +331,15 @@ export function ProjectDetailPage() {
         title="Delete Task"
         message={`Are you sure you want to delete "${deletingTask?.title}"?`}
         isLoading={isDeleting}
+      />
+
+      <ConfirmDialog
+        isOpen={leaveDialogOpen}
+        onClose={() => setLeaveDialogOpen(false)}
+        onConfirm={handleLeaveProject}
+        title="Leave Project"
+        message={`Are you sure you want to leave "${project.name}"?`}
+        isLoading={isLeaving}
       />
     </div>
   )

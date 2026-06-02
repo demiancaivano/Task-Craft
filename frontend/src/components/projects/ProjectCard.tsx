@@ -15,9 +15,12 @@ type ProjectCardProps = {
   project: ProjectDto
   onEdit: (project: ProjectDto) => void
   onDelete: (project: ProjectDto) => void
+  onLeave: (project: ProjectDto) => void
 }
 
-export function ProjectCard({ project, onEdit, onDelete }: ProjectCardProps) {
+export function ProjectCard({ project, onEdit, onDelete, onLeave }: ProjectCardProps) {
+  const isManager = project.currentUserRole === 'Manager'
+
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-black/8 bg-white p-5 transition-shadow hover:shadow-md dark:border-white/8 dark:bg-surface dark:hover:shadow-black/30">
       <div className="flex items-start justify-between gap-2">
@@ -32,20 +35,32 @@ export function ProjectCard({ project, onEdit, onDelete }: ProjectCardProps) {
             <RoleBadge role={ROLE_LABEL_MAP[project.currentUserRole]} />
           )}
           <div className="flex shrink-0 gap-1">
-            <button
-              type="button"
-              onClick={() => onEdit(project)}
-              className="rounded-md px-2 py-1 text-xs text-muted transition-colors hover:bg-black/5 hover:text-ink dark:hover:bg-white/8"
-            >
-              Edit
-            </button>
-            <button
-              type="button"
-              onClick={() => onDelete(project)}
-              className="rounded-md px-2 py-1 text-xs text-muted transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400"
-            >
-              Delete
-            </button>
+            {isManager ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => onEdit(project)}
+                  className="rounded-md px-2 py-1 text-xs text-muted transition-colors hover:bg-black/5 hover:text-ink dark:hover:bg-white/8"
+                >
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onDelete(project)}
+                  className="rounded-md px-2 py-1 text-xs text-muted transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400"
+                >
+                  Delete
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={() => onLeave(project)}
+                className="rounded-md px-2 py-1 text-xs text-muted transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400"
+              >
+                Leave
+              </button>
+            )}
           </div>
         </div>
       </div>
