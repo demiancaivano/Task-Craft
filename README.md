@@ -212,7 +212,7 @@ Este proyecto está bajo la Licencia MIT. Ver el archivo [LICENSE](LICENSE) para
 
 ## 👥 Autores
 
-- **Tu Nombre** - *Trabajo Inicial* - [TuGitHub](https://github.com/YOUR_USERNAME)
+- Demian Caivano github.com/demiancaivano
 
 ## 🙏 Agradecimientos
 
